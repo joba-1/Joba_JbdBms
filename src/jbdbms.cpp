@@ -3,7 +3,7 @@
 
 // Debug
 
-void hex( const char *label, const uint8_t *data, size_t length ) {
+static void hex( const char *label, const uint8_t *data, size_t length ) {
     Serial.printf("%s:", label);
     while( length-- ) {
         Serial.printf(" %02x", *(data++));
@@ -75,12 +75,29 @@ bool JbdBms::execute( request_header_t &header, uint8_t *command, uint8_t *resul
 
 bool JbdBms::getStatus( Status_t &data ) {
     request_header_t header = { 0, READ, STATUS, 0 };
-    return execute(header, 0, (uint8_t *)&data);
+    bool rc = execute(header, 0, (uint8_t *)&data);
+    swap(&data.voltage);
+    swap((uint16_t *)&data.current);
+    swap(&data.remainingCapacity);
+    swap(&data.nominalCapacity);
+    swap(&data.cycles);
+    swap(&data.productionDate);
+    swap(&data.balanceLow);
+    swap(&data.balanceHigh);
+    swap(&data.fault);
+    // for (size_t i = 0; i < sizeof(data.temperatures)/sizeof(*data.temperatures); i++) {
+    //     swap(&data.temperatures[i]);
+    // }
+    return rc;
 }
     
 bool JbdBms::getCells( Cells_t &data ) {
     request_header_t header = { 0, READ, CELLS, 0 };
-    return execute(header, 0, (uint8_t *)&data);
+    bool rc = execute(header, 0, (uint8_t *)&data);
+    for (size_t i = 0; i < sizeof(data.voltages)/sizeof(*data.voltages); i++) {
+        swap(&data.voltages[i]);
+    }
+    return rc;
 }
     
 bool JbdBms::getHardware( Hardware_t &data ) {
@@ -93,7 +110,8 @@ bool JbdBms::getHardware( Hardware_t &data ) {
 
 bool JbdBms::setMosfetStatus( mosfet_t status ) {
     request_header_t header = { 0, WRITE, MOSFET, 2 };
-    return execute(header, (uint8_t *)&status, 0);
+    uint8_t mosfetStatus[] = { 0, status };
+    return execute(header, mosfetStatus, 0);
 }
 
 
@@ -122,7 +140,7 @@ uint16_t JbdBms::genCrc( uint8_t byte, uint8_t len, uint8_t *data ) {
         }
     }
 
-    return crc;
+    return swap(&crc);
 }
 
 // Check crc of result

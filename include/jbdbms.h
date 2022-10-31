@@ -69,6 +69,7 @@ public:
         uint8_t start, command, returncode, length;
     } response_header_t;
 
+    // Enum values represent states of 2 bits
     typedef enum mosfet { MOSFET_NONE, MOSFET_CHARGE, MOSFET_DISCHARGE, MOSFET_BOTH } mosfet_t;
 
     typedef enum cmd {
@@ -95,13 +96,14 @@ public:
         uint16_t fault;              // bit is set if fault protection is active (see static protection functions)
         uint8_t version;             // bms firmware version
         uint8_t currentCapacity;     // percentage 
-        uint8_t mosfetSatus;         // see mosfet_t
+        uint8_t mosfetStatus;        // see mosfet_t
         uint8_t cells;
         uint8_t ntcs;                // following this are the ntc temperatures in 0.1K, 2 bytes each
+        uint16_t temperatures[8];    // Jiabaida software uses 8 fields. Enough for my BMS type
     } Status_t;
 
     typedef struct Cells {
-        uint16_t voltage[32];  // max 32 cells supported
+        uint16_t voltages[32];  // max 32 cells supported
     } Cells_t;
 
     typedef struct Hardware {
@@ -133,6 +135,9 @@ public:
 
 
     // Static helper functions
+
+    // LSB first
+    static uint16_t swap( uint16_t *data ) { return *data = (*data >> 8) | (*data << 8); };
 
     static bool isCellOvervoltage( uint16_t fault )           { return fault & 0x0001; };
     static bool isCellUndervoltage( uint16_t fault )          { return fault & 0x0002; };
