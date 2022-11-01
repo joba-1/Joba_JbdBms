@@ -85,9 +85,6 @@ bool JbdBms::getStatus( Status_t &data ) {
     swap(&data.balanceLow);
     swap(&data.balanceHigh);
     swap(&data.fault);
-    // for (size_t i = 0; i < sizeof(data.temperatures)/sizeof(*data.temperatures); i++) {
-    //     swap(&data.temperatures[i]);
-    // }
     return rc;
 }
     
@@ -155,4 +152,22 @@ bool JbdBms::prepareCmd( request_header_t &header, uint8_t *data, uint16_t &crc 
     header.start = 0xdd;
     crc = genRequestCrc(header, data);
     return crc != 0;
+}
+
+
+// Convert balance bits to string
+// WARNING: not thread safe: returns shared buffer
+const char *JbdBms::balance( const Status_t &data ) {
+    static char balanceStr[33];
+
+    char *balancePtr = balanceStr;
+    uint32_t balanceBits = (uint32_t)data.balanceHigh << 16 | data.balanceLow;
+    size_t cell = (data.cells < sizeof(balanceStr)) ? data.cells : sizeof(balanceStr) - 1;
+    while(cell--) {
+        *(balancePtr++) = (balanceBits & 1) ? '1' : '0';
+        balanceBits >>= 1;
+    }
+    *balancePtr = '\0';
+
+    return balanceStr;
 }

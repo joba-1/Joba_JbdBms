@@ -84,6 +84,10 @@ public:
         ERR = 0x80
     } returncode_t;
 
+    typedef struct temperature {
+        uint8_t hi, lo;  // big endian uint16_t starting at odd address 
+    } temperature_t;
+
     typedef struct Status {
         uint16_t voltage;            // in 10 mV
         int16_t current;             // in 10 mA, positive means charge, negative discharge
@@ -99,7 +103,7 @@ public:
         uint8_t mosfetStatus;        // see mosfet_t
         uint8_t cells;
         uint8_t ntcs;                // following this are the ntc temperatures in 0.1K, 2 bytes each
-        uint16_t temperatures[8];    // Jiabaida software uses 8 fields. Enough for my BMS type
+        temperature_t temperatures[8];  // Jiabaida software uses 8 fields. Enough for my BMS type
     } Status_t;
 
     typedef struct Cells {
@@ -136,22 +140,27 @@ public:
 
     // Static helper functions
 
-    // LSB first
-    static uint16_t swap( uint16_t *data ) { return *data = (*data >> 8) | (*data << 8); };
+    static uint16_t swap( uint16_t *data ) { return *data = (*data >> 8) | (*data << 8); }  // lsb first
+    static uint16_t deciKelvin( temperature_t temperature ) { return (uint16_t)temperature.hi << 8 | temperature.lo; }
+    static int16_t deciCelsius( temperature_t temperature ) { return deciKelvin(temperature) - 2731; }
+    static uint16_t year( uint16_t prodDate ) { return (prodDate >> 9) + 2000; }
+    static uint8_t month( uint16_t prodDate ) { return (prodDate >> 5) & 0xf; }
+    static uint8_t day( uint16_t prodDate ) { return prodDate & 0x1f; }
+    static const char *balance( const Status_t &data );
 
-    static bool isCellOvervoltage( uint16_t fault )           { return fault & 0x0001; };
-    static bool isCellUndervoltage( uint16_t fault )          { return fault & 0x0002; };
-    static bool isOvervoltage( uint16_t fault )               { return fault & 0x0004; };
-    static bool isUndervoltage( uint16_t fault )              { return fault & 0x0008; };
-    static bool isChargeOvertemperature( uint16_t fault )     { return fault & 0x0010; };
-    static bool isChargeUndertemperature( uint16_t fault )    { return fault & 0x0020; };
-    static bool isDischargeOvertemperature( uint16_t fault )  { return fault & 0x0040; };
-    static bool isDischargeUndertemperature( uint16_t fault ) { return fault & 0x0080; };
-    static bool isChargeOvercurrent( uint16_t fault )         { return fault & 0x0100; };
-    static bool isDischargeOvercurrent( uint16_t fault )      { return fault & 0x0200; };
-    static bool isShortCircuit( uint16_t fault )              { return fault & 0x0400; };
-    static bool isIcError( uint16_t fault )                   { return fault & 0x0800; };
-    static bool isMosfetSoftwareLock( uint16_t fault )        { return fault & 0x1000; };
+    static bool isCellOvervoltage( uint16_t fault )           { return fault & 0x0001; }
+    static bool isCellUndervoltage( uint16_t fault )          { return fault & 0x0002; }
+    static bool isOvervoltage( uint16_t fault )               { return fault & 0x0004; }
+    static bool isUndervoltage( uint16_t fault )              { return fault & 0x0008; }
+    static bool isChargeOvertemperature( uint16_t fault )     { return fault & 0x0010; }
+    static bool isChargeUndertemperature( uint16_t fault )    { return fault & 0x0020; }
+    static bool isDischargeOvertemperature( uint16_t fault )  { return fault & 0x0040; }
+    static bool isDischargeUndertemperature( uint16_t fault ) { return fault & 0x0080; }
+    static bool isChargeOvercurrent( uint16_t fault )         { return fault & 0x0100; }
+    static bool isDischargeOvercurrent( uint16_t fault )      { return fault & 0x0200; }
+    static bool isShortCircuit( uint16_t fault )              { return fault & 0x0400; }
+    static bool isIcError( uint16_t fault )                   { return fault & 0x0800; }
+    static bool isMosfetSoftwareLock( uint16_t fault )        { return fault & 0x1000; }
 
 private:
     uint16_t genRequestCrc( request_header_t &header, uint8_t *data );
