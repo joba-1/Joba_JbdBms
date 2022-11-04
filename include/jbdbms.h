@@ -118,8 +118,10 @@ public:
 
     // Basic methods
 
-    // Object represents device at serial port. Send commands with minimal delay given 
-    JbdBms( Stream &serial, uint8_t command_delay_ms = 0 );  // TODO delay needed?
+    // Object represents device at serial port. Send commands with minimal delay given.
+    // If prev is not NULL, JbdBms uses it to store millis() of last stream access and
+    // expects other stream users to do the same (Joba_ESmart3 does the same)
+    JbdBms( Stream &serial, uint32_t *prev = NULL, uint8_t command_delay_ms = 60 );
 
     // Init dir_pin. -1 if RS485 hardware sets direction automatically
     void begin( int dir_pin = -1 );
@@ -171,7 +173,8 @@ private:
 
     Stream &_serial;
     uint8_t _delay;
-    uint32_t _prev;
+    uint32_t _prev_local;
+    uint32_t *_prev;
     int _dir_pin;
 };
 
