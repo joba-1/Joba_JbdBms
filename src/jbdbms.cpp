@@ -14,8 +14,11 @@ static void hex( const char *label, const uint8_t *data, size_t length ) {
 
 // Basic methods
 
-JbdBms::JbdBms( Stream &serial, uint8_t command_delay_ms ) 
-    : _serial(serial), _delay(command_delay_ms), _prev(0), _dir_pin(-1) {
+JbdBms::JbdBms( Stream &serial, uint32_t *prev, uint8_t command_delay_ms ) 
+    : _serial(serial), _delay(command_delay_ms), _prev(prev), _dir_pin(-1) {
+    if (!_prev) {
+        _prev = &_prev_local;
+    }
 }
 
 void JbdBms::begin( int dir_pin ) {
@@ -34,7 +37,7 @@ bool JbdBms::execute( request_header_t &header, uint8_t *command, uint8_t *resul
         return false;
     }
 
-    uint32_t remaining = _delay - (millis() - _prev);
+    uint32_t remaining = _delay - (millis() - *_prev);
     if( remaining <= _delay ) {
         delay(remaining);
     }
@@ -65,7 +68,7 @@ bool JbdBms::execute( request_header_t &header, uint8_t *command, uint8_t *resul
           && header.returncode == 0;
     }
 
-    _prev = millis();
+    *_prev = millis();
 
     return rc;
 }
