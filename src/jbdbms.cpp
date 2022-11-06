@@ -110,7 +110,8 @@ bool JbdBms::getHardware( Hardware_t &data ) {
 
 bool JbdBms::setMosfetStatus( mosfet_t status ) {
     request_header_t header = { 0, WRITE, MOSFET, 2 };
-    uint8_t mosfetStatus[] = { 0, status };
+    uint8_t status_inv = ~status & MOSFET_BOTH;  // invert status pins
+    uint8_t mosfetStatus[] = { 0, status_inv };
     return execute(header, mosfetStatus, 0);
 }
 

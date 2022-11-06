@@ -1,6 +1,6 @@
 {
   "name": "Joba_JbdBms",
-  "version": "2.0",
+  "version": "2.1",
   "description": "Talk to a Jiabaida Battery Management System over RS485. Tested with an ESP32 and a JBD-SP04S010A. Might also work with UART.",
   "keywords": "lifepo, battery, jbd, bms, rs485",
   "repository":
